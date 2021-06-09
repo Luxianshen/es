@@ -45,24 +45,26 @@ public class ContentService {
         List<Content> contents = HtmlParseUtil.parseJD(keyword);
         // 内容放入 es 中
         BulkRequest bulkRequest = new BulkRequest();
-        bulkRequest.timeout("200m"); // 可更具实际业务是指
+        // 可更具实际业务是指
+        bulkRequest.timeout("200m");
         for (int i = 0; i < contents.size(); i++) {
             bulkRequest.add(
-                    new IndexRequest("jd_goods")
-                            .id(""+(i+1))
+                    new IndexRequest("jd_goods_" + keyword)
+                            .id("" + (i + 1))
                             .source(JSON.toJSONString(contents.get(i)), XContentType.JSON)
             );
         }
         BulkResponse bulk = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-        restHighLevelClient.close();
+        //restHighLevelClient.close();
         return !bulk.hasFailures();
     }
+
     // 2、根据keyword分页查询结果
     public List<Map<String, Object>> search(String keyword, Integer pageIndex, Integer pageSize) throws IOException {
-        if (pageIndex < 0){
+        if (pageIndex < 0) {
             pageIndex = 0;
         }
-        SearchRequest jd_goods = new SearchRequest("jd_goods");
+        SearchRequest jd_goods = new SearchRequest("jd_goods_");
         // 创建搜索源建造者对象
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         // 条件采用：精确查询 通过keyword查字段name
@@ -81,7 +83,7 @@ public class ContentService {
         restHighLevelClient.close();
         // 解析结果
         SearchHits hits = searchResponse.getHits();
-        List<Map<String,Object>> results = new ArrayList<>();
+        List<Map<String, Object>> results = new ArrayList<>();
         for (SearchHit documentFields : hits.getHits()) {
             Map<String, Object> sourceAsMap = documentFields.getSourceAsMap();
             results.add(sourceAsMap);
@@ -92,7 +94,7 @@ public class ContentService {
 
 
     public List<Map<String, Object>> highlightSearch(String keyword, Integer pageIndex, Integer pageSize) throws IOException {
-        SearchRequest searchRequest = new SearchRequest("jd_goods");
+        SearchRequest searchRequest = new SearchRequest("jd_goods_" + keyword);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         // 精确查询，添加查询条件
         TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery("name", keyword);
@@ -120,13 +122,13 @@ public class ContentService {
             Map<String, HighlightField> highlightFields = documentFields.getHighlightFields();
             HighlightField name = highlightFields.get("name");
             // 替换
-            if (name != null){
+            if (name != null) {
                 Text[] fragments = name.fragments();
                 StringBuilder new_name = new StringBuilder();
                 for (Text text : fragments) {
                     new_name.append(text);
                 }
-                sourceAsMap.put("name",new_name.toString());
+                sourceAsMap.put("name", new_name.toString());
             }
             results.add(sourceAsMap);
         }

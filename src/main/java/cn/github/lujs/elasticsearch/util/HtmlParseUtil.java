@@ -22,6 +22,7 @@ public class HtmlParseUtil {
         /// 使用前需要联网
         // 请求url
         String url = "http://search.jd.com/search?keyword=" + keyword;
+        //String url = "https://category.vip.com/suggest.php?keyword=" + keyword;
         // 1.解析网页(jsoup 解析返回的对象是浏览器Document对象)
         Document document = Jsoup.parse(new URL(url), 30000);
         // 使用document可以使用在js对document的所有操作
